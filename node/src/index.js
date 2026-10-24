@@ -1,0 +1,7 @@
+export const DEFAULT_URL = "https://www.isrgrajan.com/gecko/tts/index.php";
+export class GeckoTTSError extends Error { constructor(status,message){super(`Gecko TTS HTTP ${status}: ${message}`);this.name="GeckoTTSError";this.status=status;} }
+export class GeckoTTS {
+  constructor({key=process.env.GECKO_TTS_KEY,secret=process.env.GECKO_TTS_SECRET,baseUrl=process.env.GECKO_TTS_URL||DEFAULT_URL,timeoutMs=90000}={}){if(!key||!secret)throw new Error("Set key/secret or GECKO_TTS_KEY and GECKO_TTS_SECRET.");Object.assign(this,{key,secret,baseUrl,timeoutMs});}
+  async synthesize({text,ssml,lang,format="mp3",stream=true}={}){const t=typeof text==="string"&&text.length>0,s=typeof ssml==="string"&&ssml.length>0;if(t===s)throw new TypeError("Provide exactly one non-empty text or ssml value.");const payload={[t?"text":"ssml"]:t?text:ssml,format,stream};if(lang)payload.lang=lang;const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),this.timeoutMs);try{const r=await fetch(this.baseUrl,{method:"POST",headers:{"Content-Type":"application/json","Accept":"audio/*, application/octet-stream, application/json","X-API-Key":`${this.key}:${this.secret}`},body:JSON.stringify(payload),signal:ctl.signal});if(!r.ok)throw new GeckoTTSError(r.status,(await r.text()).slice(0,1200)||r.statusText);return Buffer.from(await r.arrayBuffer());}finally{clearTimeout(timer);}}
+  async synthesizeToFile(path,options){const fs=await import("node:fs/promises");await fs.writeFile(path,await this.synthesize(options),{mode:0o600});return path;}
+}

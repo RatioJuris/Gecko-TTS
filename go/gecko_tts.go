@@ -1,0 +1,10 @@
+// Package geckotts is a client for the Gecko TTS HTTP gateway.
+package geckotts
+import("bytes";"context";"encoding/json";"fmt";"io";"net/http";"os";"strings";"time")
+const DefaultURL="https://www.isrgrajan.com/gecko/tts/index.php"
+type Client struct{Key,Secret,BaseURL string; HTTP *http.Client}
+type Request struct{Text string `json:"text,omitempty"`; SSML string `json:"ssml,omitempty"`; Lang string `json:"lang,omitempty"`; Format string `json:"format,omitempty"`; Stream *bool `json:"stream,omitempty"`}
+type APIError struct{StatusCode int; Body string}
+func(e *APIError)Error()string{return fmt.Sprintf("Gecko TTS HTTP %d: %s",e.StatusCode,e.Body)}
+func NewClient(key,secret string)(*Client,error){if key==""{key=os.Getenv("GECKO_TTS_KEY")};if secret==""{secret=os.Getenv("GECKO_TTS_SECRET")};if key==""||secret==""{return nil,fmt.Errorf("set key/secret or GECKO_TTS_KEY and GECKO_TTS_SECRET")};return &Client{Key:key,Secret:secret,BaseURL:DefaultURL,HTTP:&http.Client{Timeout:90*time.Second}},nil}
+func(c *Client)Synthesize(ctx context.Context,in Request)([]byte,error){t:=strings.TrimSpace(in.Text)!="";s:=strings.TrimSpace(in.SSML)!="";if t==s{return nil,fmt.Errorf("provide exactly one non-empty Text or SSML")};if in.Format==""{in.Format="mp3"};if in.Stream==nil{v:=true;in.Stream=&v};b,e:=json.Marshal(in);if e!=nil{return nil,e};url:=c.BaseURL;if url==""{url=DefaultURL};req,e:=http.NewRequestWithContext(ctx,http.MethodPost,url,bytes.NewReader(b));if e!=nil{return nil,e};req.Header.Set("Content-Type","application/json");req.Header.Set("Accept","audio/*, application/octet-stream, application/json");req.Header.Set("X-API-Key",c.Key+":"+c.Secret);h:=c.HTTP;if h==nil{h=&http.Client{Timeout:90*time.Second}};resp,e:=h.Do(req);if e!=nil{return nil,e};defer resp.Body.Close();body,e:=io.ReadAll(resp.Body);if e!=nil{return nil,e};if resp.StatusCode<200||resp.StatusCode>=300{if len(body)>1200{body=body[:1200]};return nil,&APIError{resp.StatusCode,strings.TrimSpace(string(body))}};return body,nil}

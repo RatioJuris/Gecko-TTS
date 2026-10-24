@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+*.mp3
+*.wav
+*.ogg
+*.flac
+__pycache__/
+.pytest_cache/
+.venv/
+node_modules/
+target/
+bin/
+obj/
+*.class
+*.log
+.DS_Store

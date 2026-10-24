@@ -1,0 +1,5 @@
+{
+  "name": "gecko-tts", "version": "0.1.0", "type": "module",
+  "description": "Node.js client for Gecko TTS HTTP API", "license": "MIT",
+  "engines": {"node": ">=18"}, "exports": "./src/index.js"
+}
