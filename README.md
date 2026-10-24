@@ -89,4 +89,4 @@ The gateway returns audio bytes on success, not a JSON success object. Treat non
 
 ## License
 
-MIT; see `LICENSE`.
+MIT; see `[LICENSE](LICENSE)`.
